@@ -36,9 +36,9 @@ class InferenceManager:
         self._model = ModelExample(raw_model)
 
     def infer(input) -> str:
-        pass
+        op, bboxes = self._model.predict(input)
+        return op.format(*list(map(lambda x: self.model_predict(x), bboxes)))
 
-    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

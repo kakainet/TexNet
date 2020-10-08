@@ -2,6 +2,10 @@ import abc
 from dataclasses import dataclass
 from enum import Enum
 import json
+import os
+import cv2
+from typing import List
+import argparse
 
 @dataclass
 class Box:
@@ -9,6 +13,19 @@ class Box:
     y: int
     dx: int
     dy: int
+
+
+class Operator(Enum):
+    ADD: '{0}+{1}'
+    SUB: '{0}-{1}'
+    MUL: '{0} \\cdot {1}'
+    FRAC: '\\frac{{ {0} }}{{ {1} }}'
+    SQRT: '\\sqrt{{ {0} }}'
+    INT: '\\int {0}'
+    PAR: '\\left({0}\\right)'
+    FPAR: 'f\\left({0}\\right)'
+    FFPAR: 'F\\left({0}\\right)'
+    GPAR: 'G\\left({0}\\right)'
 
 
 @dataclass
@@ -27,7 +44,7 @@ class Model(abc.ABC):
 
 
 class ModelExample(Model):
-    def predict(input) -> Prediction:
+    def predict(self, input) -> Prediction:
         return Operator.ADD, [Box(25, 25, 17, 17), Box(34, 34, 17, 17)]
 
 
@@ -35,9 +52,10 @@ class InferenceManager:
     def __init__(self, raw_model, operators_data):
         self._model = ModelExample(raw_model)
 
-    def infer(input) -> str:
+    def infer(self, input) -> str:
         op, bboxes = self._model.predict(input)
-        return op.format(*list(map(lambda x: self.model_predict(x), bboxes)))
+        bboxes = list(map(lambda x: input[x[0]:x[0]+x[2], x[1]:x[1]+x[3]], bboxes))
+        return op.format(*list(map(lambda x: self._model.predict(x), bboxes)))
 
 
 if __name__ == "__main__":
@@ -54,6 +72,6 @@ if __name__ == "__main__":
     raw_model = None
     mgr = InferenceManager(raw_model, ops_config)
 
-    for f in os.listdir(args.in_dir):
+    for f in os.listdir(cmd_args.in_dir):
         img = cv2.imread(f)
         print(mgr.infer(img))
